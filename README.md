@@ -4,7 +4,7 @@ Este repositorio contiene el sistema interno de Óptica Prolens, encargado de ge
 
 ## Tecnologías Utilizadas
 
-* **Java** (JDK 18+)
+* **Java8** (JDK 1.8+)
 * **PostgreSQL** (Base de datos relacional)
 * **Maven** (Gestión de dependencias)
 * **json-simple** (Serialización y deserialización de JSON)
