@@ -32,9 +32,7 @@ public class TCPServer {
                         Pedido pedidoActualizado = PedidoJSON.stringObjeto(datoRecibido);
 
                         // 2. Actualizar estado en BD
-                        // Nota: Debes agregar el método actualizarEstado(idPedido, estado) en PedidoDAO
-                        // pedidoDAO.actualizarEstado(pedidoActualizado.getIdPedido(),
-                        // pedidoActualizado.getEstado());
+                        pedidoDAO.actualizarEstado(pedidoActualizado.getIdPedido(), pedidoActualizado.getEstado());
 
                         System.out.println("[Prolens] Estado del pedido " + pedidoActualizado.getIdPedido()
                                 + " actualizado a: " + pedidoActualizado.getEstado());
