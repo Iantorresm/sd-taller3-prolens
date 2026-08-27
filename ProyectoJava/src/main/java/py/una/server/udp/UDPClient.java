@@ -1,99 +1,59 @@
 package py.una.server.udp;
 
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 
-import java.io.*;
-import java.net.*;
+import py.una.entidad.Pedido;
+import py.una.entidad.PedidoJSON;
 
-import py.una.entidad.Persona;
-import py.una.entidad.PersonaJSON;
-
-class UDPClient {
+public class UDPClient {
 
     public static void main(String a[]) throws Exception {
 
-        // Datos necesario
-        String direccionServidor = "127.0.0.1";
-
-        if (a.length > 0) {
-            direccionServidor = a[0];
-        }
-
+        // Datos del servidor (GlobalTrack)
+        String ipServidor = "localhost";
         int puertoServidor = 9876;
-        
+
         try {
-
-            BufferedReader inFromUser =
-                    new BufferedReader(new InputStreamReader(System.in));
-
             DatagramSocket clientSocket = new DatagramSocket();
+            InetAddress IPAddress = InetAddress.getByName(ipServidor);
 
-            InetAddress IPAddress = InetAddress.getByName(direccionServidor);
-            System.out.println("Intentando conectar a = " + IPAddress + ":" + puertoServidor +  " via UDP...");
+            // 1. Prolens arma su Pedido con el idEnvio que desea consultar
+            Pedido pedidoConsulta = new Pedido();
+            pedidoConsulta.setIdEnvio(1); // El número de tracking que Prolens guardó al registrar
 
-            byte[] sendData = new byte[1024];
-            byte[] receiveData = new byte[1024];
+            // Convertimos la entidad Pedido a JSON
+            String datoEnvio = PedidoJSON.objetoString(pedidoConsulta);
+            byte[] sendData = datoEnvio.getBytes();
 
-            System.out.print("Ingrese el número de cédula (debe ser numérico): ");
-            String strcedula = inFromUser.readLine();
-            Long cedula = 0L;
-            try {
-            	cedula = Long.parseLong(strcedula);
-            }catch(Exception e1) {
-            	
-            }
-            
-            System.out.print("Ingrese el nombre: ");
-            String nombre = inFromUser.readLine();
-            System.out.print("Ingrese el apellido: ");
-            String apellido = inFromUser.readLine();
-            
-            Persona p = new Persona(cedula, nombre, apellido);
-            
-            String datoPaquete = PersonaJSON.objetoString(p); 
-            sendData = datoPaquete.getBytes();
+            System.out.println("Óptica Prolens consultando estado: " + datoEnvio);
 
-            System.out.println("Enviar " + datoPaquete + " al servidor. ("+ sendData.length + " bytes)");
-            DatagramPacket sendPacket =
-                    new DatagramPacket(sendData, sendData.length, IPAddress, puertoServidor);
-
+            // 2. Enviar el paquete a Global Express
+            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, puertoServidor);
             clientSocket.send(sendPacket);
 
-            DatagramPacket receivePacket =
-                    new DatagramPacket(receiveData, receiveData.length);
+            // 3. Esperar la respuesta del servidor
+            byte[] receiveData = new byte[1024];
+            DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+            clientSocket.receive(receivePacket);
 
-            System.out.println("Esperamos si viene la respuesta.");
+            // 4. Procesar la respuesta
+            String respuesta = new String(receivePacket.getData(), 0, receivePacket.getLength());
 
-            //Vamos a hacer una llamada BLOQUEANTE entonces establecemos un timeout maximo de espera
-            clientSocket.setSoTimeout(10000);
+            // Convertir el JSON recibido de vuelta a la entidad Pedido de Prolens
+            Pedido pedidoActualizado = PedidoJSON.stringObjeto(respuesta);
 
-            try {
-                // ESPERAMOS LA RESPUESTA, BLOQUENTE
-                clientSocket.receive(receivePacket);
+            System.out.println("=======================================");
+            System.out.println("ACTUALIZACIÓN RECIBIDA EN PROLENS");
+            System.out.println("ID Envío (Tracking): " + pedidoActualizado.getIdEnvio());
+            System.out.println("Estado actual: " + pedidoActualizado.getEstado());
+            System.out.println("=======================================");
 
-                String respuesta = new String(receivePacket.getData());
-                Persona presp = PersonaJSON.stringObjeto(respuesta.trim());
-                
-                InetAddress returnIPAddress = receivePacket.getAddress();
-                int port = receivePacket.getPort();
-
-                System.out.println("Respuesta desde =  " + returnIPAddress + ":" + port);
-                System.out.println("Asignaturas: ");
-                
-                for(String tmp: presp.getAsignaturas()) {
-                	System.out.println(" -> " +tmp);
-                }
-                
-
-            } catch (SocketTimeoutException ste) {
-
-                System.out.println("TimeOut: El paquete udp se asume perdido.");
-            }
             clientSocket.close();
-        } catch (UnknownHostException ex) {
-            System.err.println(ex);
-        } catch (IOException ex) {
-            System.err.println(ex);
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
     }
-} 
-
+}

@@ -1,0 +1,6 @@
+-- Ejecutar en la base de datos de Óptica Prolens
+CREATE TABLE pedido (
+    id_pedido SERIAL PRIMARY KEY,
+    id_envio INTEGER,
+    estado VARCHAR(50) NOT NULL
+);
