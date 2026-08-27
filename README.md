@@ -2,9 +2,9 @@
 
 Este repositorio contiene el sistema interno de Óptica Prolens, encargado de gestionar los pedidos locales de los clientes y comunicarse mediante sockets (UDP y TCP) con el sistema de logística de Global Express.
 
-## 🛠️ Tecnologías Utilizadas
+## Tecnologías Utilizadas
 
-* **Java** (JDK 11+)
+* **Java** (JDK 18+)
 * **PostgreSQL** (Base de datos relacional)
 * **Maven** (Gestión de dependencias)
 * **json-simple** (Serialización y deserialización de JSON)
