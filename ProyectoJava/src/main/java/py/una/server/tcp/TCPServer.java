@@ -1,58 +1,54 @@
 package py.una.server.tcp;
 
-import java.util.concurrent.TimeUnit;
-import java.net.*;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+import py.una.entidad.Pedido;
+import py.una.entidad.PedidoJSON;
+import py.una.bd.PedidoDAO;
 
 public class TCPServer {
+    public static void main(String[] args) {
+        int puerto = 4445;
 
-    public static void main(String[] args) throws Exception {
+        try (ServerSocket serverSocket = new ServerSocket(puerto)) {
+            System.out.println("Servidor TCP Óptica Prolens escuchando en el puerto " + puerto + "...");
 
-        int puertoServidor = 4444;
-        int tiempo_procesamiento_miliseg = 2000;
-		
-		try{
-			tiempo_procesamiento_miliseg = Integer.parseInt(args[0]);
-		}catch(Exception e1){
-			System.out.println("Se omite el argumento, tiempo de procesamiento " + tiempo_procesamiento_miliseg  + ". Ref: " + e1);
-		}
-		
-		
-        ServerSocket serverSocket = null;
-        try {
-            serverSocket = new ServerSocket(puertoServidor);
-        } catch (IOException e) {
-            System.err.println("No se puede abrir el puerto: " +puertoServidor+ ".");
-            System.exit(1);
+            PedidoDAO pedidoDAO = new PedidoDAO();
+
+            while (true) {
+                try (Socket clientSocket = serverSocket.accept();
+                        PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+                        BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
+
+                    String datoRecibido = in.readLine();
+                    System.out.println("\n[Prolens] Actualización logística recibida: " + datoRecibido);
+
+                    if (datoRecibido != null) {
+                        // 1. Convertir JSON a entidad
+                        Pedido pedidoActualizado = PedidoJSON.stringObjeto(datoRecibido);
+
+                        // 2. Actualizar estado en BD
+                        // Nota: Debes agregar el método actualizarEstado(idPedido, estado) en PedidoDAO
+                        // pedidoDAO.actualizarEstado(pedidoActualizado.getIdPedido(),
+                        // pedidoActualizado.getEstado());
+
+                        System.out.println("[Prolens] Estado del pedido " + pedidoActualizado.getIdPedido()
+                                + " actualizado a: " + pedidoActualizado.getEstado());
+
+                        // 3. Confirmar recepción al sistema logístico
+                        out.println("{\"mensaje\": \"Estado actualizado correctamente en e-vision\"}");
+                    }
+
+                } catch (Exception e) {
+                    System.err.println("Error procesando actualización: " + e.getMessage());
+                }
+            }
+        } catch (Exception ex) {
+            System.err.println("Error crítico en el puerto " + puerto + ": " + ex.getMessage());
         }
-        System.out.println("Puerto abierto: "+puertoServidor+".");
-        Socket clientSocket = null;
-        try {
-            clientSocket = serverSocket.accept();
-        } catch (IOException e) {
-            System.err.println("Fallo el accept().");
-            System.exit(1);
-        }
-
-        PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-        BufferedReader in = new BufferedReader(
-                new InputStreamReader(
-                clientSocket.getInputStream()));
-
-        out.println("Bienvenido!");
-        String inputLine, outputLine;
-
-        inputLine = in.readLine();
-        System.out.println("Mensaje recibido: " + inputLine);
-        outputLine = "Respuesta igual al recibido: " + inputLine;
-
-		TimeUnit.MILLISECONDS.sleep(tiempo_procesamiento_miliseg);
-		
-        out.println(outputLine);
-
-        out.close();
-        in.close();
-        clientSocket.close();
-        serverSocket.close();
     }
 }

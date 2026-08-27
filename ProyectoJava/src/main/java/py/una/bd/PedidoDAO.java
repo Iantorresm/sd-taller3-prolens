@@ -36,4 +36,17 @@ public class PedidoDAO {
             e.printStackTrace();
         }
     }
+    
+    public void actualizarEstado(Integer idPedido, String nuevoEstado) {
+        String sql = "UPDATE pedido SET estado = ? WHERE id_pedido = ?";
+        try (Connection conn = Bd.connect();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, nuevoEstado);
+            pstmt.setInt(2, idPedido);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 }
